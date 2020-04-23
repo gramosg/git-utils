@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Ensure this script works with Magit, which sets GIT_LITERAL_PATHSPECS=1 and
+# breaks git-stash
+export GIT_LITERAL_PATHSPECS=0
+
+################################################################################
+# Here is a fine piece of Git wizardry. It uses git stash to make sure that the
+# staged changes are correctly formatted:
+#
+# 1) Stash all changes (worktree + index)
+git stash push -u > /dev/null
+# 2) Apply only changes from index
+git show -p stash^2 | git apply 2> /dev/null
+# 3) Check with 'mix format' the staged changes
+mix format --check-formatted > /dev/null 2>&1
+retval=$?
+# 4) Undo changes brought from step 1
+git reset --hard > /dev/null
+git clean -f . > /dev/null
+# 5) Leave the repository as it was before
+git stash pop --index > /dev/null
+################################################################################
+
+# Don't allow the commit if 'mix format' complained
+if [ $retval -ne 0 ]; then
+    # Please keep this format ("error: XXXX") as it has special meaning to Magit
+    echo "error: Failed formatting checks. Run 'mix format' (+ git add?) and try again.";
+    exit 1;
+fi
