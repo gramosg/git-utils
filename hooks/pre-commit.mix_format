@@ -4,6 +4,9 @@
 # breaks git-stash
 export GIT_LITERAL_PATHSPECS=0
 
+# Skip hook if there are no changes to be committed
+[ -z "$(git status --porcelain=v1)" ] && exit 0
+
 ################################################################################
 # Here is a fine piece of Git wizardry. It uses git stash to make sure that the
 # staged changes are correctly formatted:
